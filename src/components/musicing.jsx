@@ -25,7 +25,9 @@ export default class Musicing extends React.Component {
             end_time: '00:00',
             lrcline: 0,
             medisArray: [],   //歌词
-            musicingid: this.props.match.params.id
+            musicingid: this.props.match.params.id,
+            musicname: '',
+            isover: false
         }
     }
 
@@ -53,6 +55,9 @@ export default class Musicing extends React.Component {
         })
     }
 
+    static startX;
+    static moveX;
+
     //是否播放
     changePlay = () => {
         this.setState((preState) => {
@@ -62,36 +67,54 @@ export default class Musicing extends React.Component {
         })
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         this.macklrc();
         const self = this;
+        let music = await this.changeMusic('getname');
+        this.setState({
+            musicname: music.name
+        })
         //获取歌曲的时长
         this.audios.addEventListener('loadedmetadata', function() {
             self.setState({
                 end_time: transTime(this.duration)
             })
         });
-        this.audios.addEventListener('timeupdate', () => {
-            this.updateProgress();
-            this.updateline();
-        }, false);
-        this.audios.addEventListener("ended", async () => {
-            //歌曲放完，判断当前的状态，然后进行切歌。如果是单曲循环则loop = true 即可
-            const index = this.props.match.params.index || 0;
-            const {list} = JSON.parse(window.localStorage.musiclist)[index];
-            let musicindex = list.findIndex(item => {
-                return this.state.musicingid == item.id
-            });
-            let newindex = musicindex === list.length ? 0 : musicindex + 1;
-            let newlrc = await this.macklrc(list[newindex].id);
-            console.info(newlrc, 9999999);
-            this.setState({
-                musicingid: list[newindex].id,
-                isplay: true,
-                medisArray: newlrc
-            }, () => {
-                setTimeout(() => this.audios.play(), 200) 
-            });
+        this.audios.addEventListener('timeupdate', this.updatefun, false);
+        this.audios.addEventListener("ended", () => {
+            window.localStorage.setItem('singid', this.state.musicingid);
+            this.changeMusic('next');
+        });
+    }
+
+    updatefun = () => {
+        this.updateProgress();
+        this.updateline();
+    }
+
+    //切换到上一首,下一首歌 
+    changeMusic = async (type) => {
+        const {musicingid} = this.state;
+        const index = this.props.match.params.index || 0;
+        const {list} = JSON.parse(window.localStorage.musiclist)[index];
+        let musicindex = list.findIndex(item => {
+            return musicingid == item.id
+        });
+        let musicview = list.find(item => {
+            return musicingid == item.id
+        })
+        if(type === 'getname') {
+            return musicview;
+        }
+        let newindex = musicindex === list.length ? 0 : type === 'pre' ? musicindex - 1 : musicindex + 1;
+        let newlrc = await this.macklrc(list[newindex].id);
+        this.setState({
+            musicingid: list[newindex].id,
+            isplay: true,
+            medisArray: newlrc,
+            musicname: list[newindex].name,
+        }, () => {
+            setTimeout(() => this.audios.play(), 200) 
         });
     }
 
@@ -110,21 +133,6 @@ export default class Musicing extends React.Component {
         }
     }
 
-    updateProgress = () => {
-        const {medisArray} = this.state
-        var value = Math.round((Math.floor(this.audios.currentTime) / Math.floor(this.audios.duration)) * 100, 0);
-        const newlrcnum = Array.isArray(medisArray) && medisArray.findIndex((value, index) => {
-            return parseFloat(value.t) >= this.audios.currentTime.toFixed(3)
-        })
-        this.refs.line.style.width = value + '%'
-        this.setState({
-            start_time: transTime(this.audios.currentTime),
-            lrcline: newlrcnum === -1 ? medisArray.length - 1 : newlrcnum,  //如果已经在最后一句，就直接返回
-        }, () => {
-            this.lrcscrolltop()
-        })
-    }
-
     lrcscrolltop = () => {
         const {lrcline} = this.state;
         const lrcs = this.refs.lrcs;
@@ -132,15 +140,6 @@ export default class Musicing extends React.Component {
         setTimeout(() => {
             lrcs.scrollTop = (lrc.getBoundingClientRect().height * lrcline) - (lrc.getBoundingClientRect().height * 2);
         }, 100)
-    }
-
-    changeWidth = (e) => {
-        const target = e.target;
-        const lingwdith = target.getBoundingClientRect().width;  //进度条的宽度
-        const pddwidth = e.clientX - target.getBoundingClientRect().left;   //减去左边的空的间距react dom 查不到offsetX属性
-        // const rate = (pddwidth - (target.getBoundingClientRect().width - lingwdith) / 2) / lingwdith;
-        this.audios.currentTime = (pddwidth/lingwdith) * this.audios.duration;
-        // this.updateProgress();
     }
 
     setSingHtml = () => {
@@ -177,13 +176,74 @@ export default class Musicing extends React.Component {
         return m.album.blurPicUrl;
     }
 
+    changeWidth = (e) => {
+        const target = e.currentTarget;
+        const lingwdith = target.getBoundingClientRect().width;  //进度条的宽度
+        const pddwidth = e.clientX - target.getBoundingClientRect().left;   //减去左边的空的间距react dom 查不到offsetX属性
+        this.audios.currentTime = (pddwidth/lingwdith) * this.audios.duration;
+        // this.updateProgress();
+    }
+
+    //进度条更新
+    updateProgress = () => {
+        const {medisArray} = this.state
+        var value = Math.round((Math.floor(this.audios.currentTime) / Math.floor(this.audios.duration)) * 100, 0);
+        const newlrcnum = Array.isArray(medisArray) && medisArray.findIndex((value, index) => {
+            return parseFloat(value.t) >= this.audios.currentTime.toFixed(3)
+        });
+        this.refs.line.style.width = value + '%'
+        this.refs.atcmk.style.left = value + '%'
+        this.setState({
+            start_time: transTime(this.audios.currentTime),
+            lrcline: newlrcnum === -1 ? medisArray.length - 1 : newlrcnum,  //如果已经在最后一句，就直接返回
+        }, () => {
+            this.lrcscrolltop()
+        })
+    }
+
+    startTouch = (evt) => {
+        evt.stopPropagation();
+        this.audios.removeEventListener('timeupdate', this.updatefun);
+        this.startX = this.refs.lines.getBoundingClientRect().left; //evt.touches[0].clientX;
+    }
+
+    moveTouch = (evt) => {
+        let moveXx = evt.touches[0].clientX;
+        let dissX = moveXx - this.startX;
+        if(dissX > 0 ) {
+            let lingwdith = this.refs.lines.getBoundingClientRect().width;  //进度条的宽度
+            let disstime = dissX/lingwdith;
+            this.moveX = disstime * this.audios.duration;
+            if(disstime > 0 && disstime <= 1) {
+                var value = Math.round((Math.floor(this.moveX ) / Math.floor(this.audios.duration)) * 100, 0);
+                this.refs.line.style.width = value + '%'
+                this.refs.atcmk.style.left = value + '%'
+            } else if(disstime > 1) {
+                this.moveX = this.audios.duration;
+                this.refs.line.style.width = 100 + '%'
+                this.refs.atcmk.style.left = 100 + '%'
+            } else {
+                this.moveX = 0
+                this.refs.line.style.width = 0 + '%'
+                this.refs.atcmk.style.left = 0 + '%'
+            }
+        } 
+    }
+
+    endTouch = (evt) => {
+        this.audios.addEventListener('timeupdate', this.updatefun, false);
+        console.info(evt, 333,this.startX, this.moveX);
+        this.audios.currentTime = this.moveX;
+    }
+
+
     render() {
         const {isplay,musicingid} = this.state;
         return (
             <div id="music_view">
+                <div className='music_title'>{this.state.musicname}</div>
                 <div className={`sing_bg ${isplay === undefined ? '' : 'at'} ${isplay === false ? 'anruning' : ''}`}>
                     <div className="sing_img">
-                        {/* <img alt="" src={require('../static/images/3.jpg')} /> */}
                         <img alt="" src={this.getImg()} />
                     </div>
                 </div>
@@ -192,13 +252,24 @@ export default class Musicing extends React.Component {
                 </div>
                 <div className="jidutiao">
                     <span className="start_time">{this.state.start_time}</span>
-                    <div className="lines" onClick={this.changeWidth}>
+                    <div className="lines" ref="lines" onClick={this.changeWidth}>
                         <div className="muc_line"></div>
                         <div className="act_line" ref="line"></div>
+                        <div className="act_mk" 
+                            ref="atcmk" 
+                            onTouchStart={this.startTouch} 
+                            onTouchMove={this.moveTouch}
+                            onTouchEnd={this.endTouch}>
+                        </div>
                     </div>
                     <span className="end_time">{this.state.end_time}</span>
                 </div>
-                <div className="musci_action" onClick={this.changePlay}></div>
+                <div className='operation'>
+                    <div className="prenext_css music_pre" onClick={() => this.changeMusic('pre')}></div>
+                    <div className={isplay ? 'action_css musci_stop' : 'action_css musci_action'} onClick={this.changePlay}></div>
+                    <div className="prenext_css music_next" onClick={() => this.changeMusic('next')}></div>
+
+                </div>
                 <audio ref={(audio) => this.audios = audio } loop={false} src={`http://music.163.com/song/media/outer/url?id=${musicingid}.mp3`}></audio >
             </div>
         )

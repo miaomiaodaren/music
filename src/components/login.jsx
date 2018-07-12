@@ -15,7 +15,6 @@ export default class Logins extends React.Component {
         fetch(`/api/music/login?username=${username}&password=${password}`, {
             method: 'get',
         }).then(res => res.json()).then(res => {
-            console.info(res, 2222, res.status);
             if(res.status === 'success') {
                 let lc = {id: res.result.account.id, name: res.result.profile.nickname}
                 window.localStorage.setItem('musicuserid', JSON.stringify(lc));
@@ -39,7 +38,6 @@ export default class Logins extends React.Component {
         })
     }
     render() {
-        console.info(this.props, 222);
         const {username, password} = this.state;
         return (
             <div className="login">

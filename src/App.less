@@ -4,6 +4,7 @@ html,body {
 	font-family: sans-serif;
 	height: 100%;
 	width: 100%;
+	overflow: hidden;
 }
 
 ul,li {
@@ -50,6 +51,15 @@ ul,li {
 	height: 100%;
 	width: 100%;
 	position: relative;
+	.music_title{
+		color: #fff;
+		font-size: 36 *@rex;
+		position: absolute;
+		top: 40 *@rex;
+		left: 0;
+		width: 100%;
+		margin: 0 auto;
+	}
 	.sing_bg{
 		width: 600 * @rex;
 		height: 600 * @rex;
@@ -107,12 +117,12 @@ ul,li {
 			width: 500 * @rex;
 			flex: none;
 			position: relative;
-			padding-top: 15 * @rex;
+			padding-top: 8 * @rex;
 			.muc_line{
 				width: 100%;
-				height: 3px;
+				height: 15 * @rex;
 				position: absolute;
-				border-radius: 5px;
+				border-radius: 10px;
 				background-color: #ddd;
 				z-index: 11;
 				left: 0;
@@ -120,27 +130,66 @@ ul,li {
 			}
 			.act_line{
 				width: 0%;
-				height: 3px;
-				border-radius: 5px;
+				height: 15 * @rex;
+				border-radius: 10px;
 				background-color: #ff0000;
 				z-index: 18;
 				left: 0;
 				position: absolute;
-				transition: width 1s ease-out;
+				transition: width .2s ease-out;
+			}
+			.act_mk{
+				width: 40 *@rex;
+				height: 40 * @rex;
+				background: url('./static/images/jj.png') 0 0 no-repeat;
+				background-size: 100%;
+				position: absolute;
+				top: -4 * @rex;
+				left: 0;
+				z-index: 22;
+				margin-left: -20 * @rex;
+				transition: left .2s ease-out;
 			}
 		}
 		
 	}
-	.musci_action{
-		width: 115 * @rex;
-		height: 115 * @rex;
+	.operation{
+		display: flex;
+		flex-direction: row;
 		position: absolute;
 		bottom: 60 * @rex;
-		left: 50%;
+		left: 25%;
 		z-index: 10;
-		margin: -75 * @rex 0 0 -70 * @rex;
-		background: url('./static/images/4.png') center no-repeat;
-		background-size: 100%;
+		.action_css{
+			flex: none;
+			width: 80 * @rex;
+			height: 80 * @rex;
+			margin: 0 60 *@rex;
+			&.musci_action{
+				background: url('./static/images/4.png') center no-repeat;
+				background-size: 100%;
+			}
+			&.musci_stop{
+				background: url('./static/images/stop.png') center no-repeat;
+				background-size: 100%;
+			}
+		}
+		.prenext_css{
+			flex: none;
+			width: 80 *@rex;
+			height: 80 *@rex;
+			&.music_pre{
+				background: url('./static/images/pre.png') center no-repeat;
+				background-size: 100%;
+			}
+			&.music_next{
+				background: url('./static/images/next.png') center no-repeat;
+				background-size: 100%;
+			}
+		}
+		
+		
+		
 	}
 	.sinnger{
 		height: 300 * @rex;
@@ -149,6 +198,10 @@ ul,li {
 		color: #fff;
 		margin: 130 * @rex auto 0 auto;
 		line-height: 60 *@rex;
+		div{
+			height: 60 * @rex;
+			line-height: 60 * @rex;
+		}
 		.lineheight{
 			font-size: 25 * @rex;
 			color: #ff0000;
