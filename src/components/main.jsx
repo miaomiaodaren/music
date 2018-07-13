@@ -16,7 +16,6 @@ export default class Main extends React.Component {
         }
     }
 
-
     getplaylist = async () => {
         const datainfo = await fetch(`/api/music/getplay?uid=${this.state.userid}`, {method: 'get'});
         const newdata = await datainfo.json();

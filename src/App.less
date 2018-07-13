@@ -4,7 +4,8 @@ html,body {
 	font-family: sans-serif;
 	height: 100%;
 	width: 100%;
-	overflow: hidden;
+	// overflow: hidden;
+	overflow-x: hidden;
 }
 
 ul,li {
@@ -44,13 +45,20 @@ ul,li {
   to { transform: rotate(360deg); }
 }
 
-
 //music_ing css
 #music_view{
 	background-color: #504e4e;
 	height: 100%;
 	width: 100%;
 	position: relative;
+	.goback{
+		position: absolute;
+		font-size: 30 * @rex;
+		top: 45 * @rex;
+		left: 60 * @rex;
+		color: #fff;
+		z-index: 22;
+	}
 	.music_title{
 		color: #fff;
 		font-size: 36 *@rex;
@@ -96,6 +104,47 @@ ul,li {
 		}
 		&.anruning{
 			animation-play-state: paused;
+		}
+	}
+	@media screen and (device-width: 320px) and (device-height: 480px) and (-webkit-device-pixel-ratio: 2) {
+		.sing_bg{
+			width: 400 * @rex;
+			height: 400 * @rex;
+			margin: 0 auto;
+			position: relative;
+			top: 100 * @rex;
+			&:before{
+				content: '';
+				background: url('./static/images/disc-ip6.png') center no-repeat;
+				background-size: 100%;
+				height: 100%;
+				width: 100%;
+				display: inline-block;
+				position: absolute;
+				left: 0;
+				top: 0;
+				transition: transform 3s;
+				z-index: 5;
+			}
+			.sing_img{
+				width: 250 * @rex;
+				height: 250 * @rex;
+				position: absolute;
+				z-index: 2;
+				top: 60 * @rex;
+				left: 70 * @rex;
+				overflow: hidden;
+				img{
+					width: 100%;
+					height: 100%;
+				}
+			}
+			&.at{
+				animation: App-logo-spin 20s infinite;
+			}
+			&.anruning{
+				animation-play-state: paused;
+			}
 		}
 	}
 	.jidutiao{
@@ -151,7 +200,46 @@ ul,li {
 				transition: left .2s ease-out;
 			}
 		}
-		
+	}
+	.volume{
+		position: absolute;
+		bottom: 180 * @rex;
+		left: 80 * @rex;
+		.voline{
+			width: 200 * @rex;
+			height: 10 * @rex;
+			border-radius: 25 * @rex;
+			background-color: #ddd;
+			position: relative;
+			&:before {
+				content: '';
+				background: url('./static/images/lb.png') center no-repeat;
+				background-size: 100%;
+				display: inline-block;
+				width: 40 * @rex;
+				height: 40 * @rex;
+				left: -50 * @rex;
+				top: -15 * @rex;
+				position: absolute;
+			}
+			&.novoline{
+				&:before {
+					content: '';
+					background: url('./static/images/lb2.png') center no-repeat;
+					background-size: 100%;
+				}
+			}
+		}
+		.actvoline{
+			width: 0;
+			height: 10 * @rex;
+			border-radius: 25 * @rex;
+			background-color: #ff0000;
+			position: absolute;
+			top: 0;
+			left: 0;
+			transition: width .5s ease-in-out;
+		}
 	}
 	.operation{
 		display: flex;
@@ -187,9 +275,11 @@ ul,li {
 				background-size: 100%;
 			}
 		}
-		
-		
-		
+		.playtype{
+			margin-left: 60 *@rex;
+			color: #fff;
+			font-size: 26 * @rex;
+		}
 	}
 	.sinnger{
 		height: 300 * @rex;
@@ -294,5 +384,5 @@ ul,li {
 @keyframes lishows {
 	from { opacity: 0;}
 	to { opacity: 1;}
-  }
-  
+}
+

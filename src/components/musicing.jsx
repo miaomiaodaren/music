@@ -1,6 +1,4 @@
 import React from 'react';
-
-
 function transTime(time) { 
     let duration = parseInt(time, 10); 
     let minute = parseInt(duration/60, 10); 
@@ -27,9 +25,14 @@ export default class Musicing extends React.Component {
             medisArray: [],   //歌词
             musicingid: this.props.match.params.id,
             musicname: '',
-            isover: false
+            isover: false,
+            volume: 0.5,
+            palyingtype: 0
         }
+        
     }
+
+    static playtype = ['列表循环', '随机播放', '单曲循环'];
 
     //歌词
     macklrc = async(newindex) => {
@@ -76,15 +79,19 @@ export default class Musicing extends React.Component {
         })
         //获取歌曲的时长
         this.audios.addEventListener('loadedmetadata', function() {
+            window.localStorage.setItem('singid', self.state.musicingid);
             self.setState({
                 end_time: transTime(this.duration)
             })
         });
         this.audios.addEventListener('timeupdate', this.updatefun, false);
         this.audios.addEventListener("ended", () => {
-            window.localStorage.setItem('singid', this.state.musicingid);
-            this.changeMusic('next');
+            self.state.palyingtype === 0 ? this.changeMusic('next') : this.changeMusic('random');
         });
+    }
+
+    componentWillUnmount() {
+        this.audios.removeEventListener('timeupdate', this.updatefun);
     }
 
     updatefun = () => {
@@ -94,7 +101,7 @@ export default class Musicing extends React.Component {
 
     //切换到上一首,下一首歌 
     changeMusic = async (type) => {
-        const {musicingid} = this.state;
+        const {musicingid, palyingtype} = this.state;
         const index = this.props.match.params.index || 0;
         const {list} = JSON.parse(window.localStorage.musiclist)[index];
         let musicindex = list.findIndex(item => {
@@ -106,7 +113,13 @@ export default class Musicing extends React.Component {
         if(type === 'getname') {
             return musicview;
         }
-        let newindex = musicindex === list.length ? 0 : type === 'pre' ? musicindex - 1 : musicindex + 1;
+        // type === 'random' ? Math.random() * list.length : 
+        let newindex
+        if(palyingtype === 1) {
+            newindex = Math.random() * list.length;
+        } else {
+            newindex = musicindex === list.length ? 0 : type === 'pre' ? musicindex - 1 :  musicindex + 1;
+        }
         let newlrc = await this.macklrc(list[newindex].id);
         this.setState({
             musicingid: list[newindex].id,
@@ -181,7 +194,6 @@ export default class Musicing extends React.Component {
         const lingwdith = target.getBoundingClientRect().width;  //进度条的宽度
         const pddwidth = e.clientX - target.getBoundingClientRect().left;   //减去左边的空的间距react dom 查不到offsetX属性
         this.audios.currentTime = (pddwidth/lingwdith) * this.audios.duration;
-        // this.updateProgress();
     }
 
     //进度条更新
@@ -230,17 +242,35 @@ export default class Musicing extends React.Component {
         } 
     }
 
+    changVolume = (e) => {
+        const target = e.currentTarget;
+        const lingwdith = target.getBoundingClientRect().width;  //进度条的宽度
+        const pddwidth = e.clientX - target.getBoundingClientRect().left;   //减去左边的空的间距react dom 查不到offsetX属性
+        this.refs.volume.style.width = (pddwidth / lingwdith) * 100 + '%';
+        this.setState({
+            volume: pddwidth / lingwdith
+        })
+    }
+
     endTouch = (evt) => {
         this.audios.addEventListener('timeupdate', this.updatefun, false);
-        console.info(evt, 333,this.startX, this.moveX);
         this.audios.currentTime = this.moveX;
     }
 
+    //修改播放模式
+    changeType = () => {
+        let len = Musicing.playtype.length - 1;
+        const {palyingtype} = this.state;
+        this.setState(preState => {
+            return {palyingtype: len === preState.palyingtype ? 0 : preState.palyingtype + 1}
+        })
+    }
 
     render() {
-        const {isplay,musicingid} = this.state;
+        const {isplay,musicingid, volume, palyingtype} = this.state;
         return (
             <div id="music_view">
+                <div className="goback" onClick={() => this.props.history.goBack()}>{`<返回`}</div>
                 <div className='music_title'>{this.state.musicname}</div>
                 <div className={`sing_bg ${isplay === undefined ? '' : 'at'} ${isplay === false ? 'anruning' : ''}`}>
                     <div className="sing_img">
@@ -264,13 +294,18 @@ export default class Musicing extends React.Component {
                     </div>
                     <span className="end_time">{this.state.end_time}</span>
                 </div>
+                <div className="volume" onClick={this.changVolume}>
+                    <div className={volume === 0 ? 'voline novoline' : 'voline'}></div>
+                    <div className="actvoline" ref="volume"></div>
+                </div>
                 <div className='operation'>
                     <div className="prenext_css music_pre" onClick={() => this.changeMusic('pre')}></div>
                     <div className={isplay ? 'action_css musci_stop' : 'action_css musci_action'} onClick={this.changePlay}></div>
                     <div className="prenext_css music_next" onClick={() => this.changeMusic('next')}></div>
-
+                    <div className="playtype" onClick={this.changeType}>{Musicing.playtype[palyingtype]}</div>
                 </div>
-                <audio ref={(audio) => this.audios = audio } loop={false} src={`http://music.163.com/song/media/outer/url?id=${musicingid}.mp3`}></audio >
+                
+                <audio ref={(audio) => this.audios = audio } loop={palyingtype === 2 ? true : false} volume={volume} onError={(e) => this.changeMusic('next')} loop={false} src={`http://music.163.com/song/media/outer/url?id=${musicingid}.mp3`}></audio >
             </div>
         )
     }
